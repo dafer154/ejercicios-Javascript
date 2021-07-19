@@ -5,9 +5,13 @@ import basededatos from './basededatos.js';
 * Devuelve el promedio de anios de estreno de todas las peliculas de la base de datos.
 */
 export const promedioAnioEstreno = () => {
-    // Ejemplo de como accedo a datos dentro de la base de datos
-    // console.log(basededatos.peliculas);
-    return [];
+    
+    let promedioPeliculas = 0;
+    let acomularAnios = basededatos.peliculas.reduce((sumaTotal, valorActual)=>sumaTotal + valorActual.anio, 0);
+
+    promedioPeliculas = Math.floor(acomularAnios/basededatos.peliculas.length)
+
+    return promedioPeliculas;
 };
 
 /**
@@ -16,7 +20,24 @@ export const promedioAnioEstreno = () => {
 * @param {number} promedio
   */
 export const pelicuasConCriticaPromedioMayorA = (promedio) => {
-    return [];
+
+    let arrayPeliculas = []
+
+    basededatos.peliculas.forEach((pelicula)=>{
+        let infoPelicula = {idPelicula: pelicula.id, sumaPuntuacion: 0, contador: 0}
+        basededatos.calificaciones.forEach((calificacion)=>{
+            if(pelicula.id === calificacion.pelicula){
+                infoPelicula.sumaPuntuacion +=calificacion.puntuacion
+                infoPelicula.contador ++;
+            }
+        })
+        const promedioPelicula = Math.floor(infoPelicula.sumaPuntuacion/infoPelicula.contador);
+        if(promedioPelicula > promedio){
+            arrayPeliculas.push(pelicula)
+        }
+    })
+
+    return arrayPeliculas;
 };
 
 /**
@@ -24,7 +45,20 @@ export const pelicuasConCriticaPromedioMayorA = (promedio) => {
 * @param {string} nombreDirector
 */
 export const peliculasDeUnDirector = (nombreDirector) => {
-    return [];
+    
+    let director = basededatos.directores.find((direc)=>{
+        if(direc.nombre === nombreDirector){
+            return direc
+        }
+    })
+
+    let listaPeliculasDirector = basededatos.peliculas.filter((pelicula)=>{
+        if(pelicula.directores.includes(director.id)){
+            return pelicula;
+        }
+    })
+    
+    return listaPeliculasDirector;
 };
 
 /**
@@ -32,7 +66,20 @@ export const peliculasDeUnDirector = (nombreDirector) => {
 * @param {number} peliculaId
 */
 export const promedioDeCriticaBypeliculaId = (peliculaId) => {
-    return [];
+    
+    let sumTotalCritica = 0;
+    let promedioCritica = 0;
+
+    let filtroCalificaciones = basededatos.calificaciones.filter((calificacion)=>{
+        if(calificacion.pelicula === peliculaId){
+            return calificacion;
+        }
+    })
+
+    sumTotalCritica = filtroCalificaciones.reduce((sumaTotal, valorActual)=> sumaTotal + valorActual.puntuacion, 0);
+    promedioCritica = Math.floor(sumTotalCritica/filtroCalificaciones.length);
+
+    return promedioCritica;
 };
 
 /**
@@ -68,9 +115,24 @@ export const promedioDeCriticaBypeliculaId = (peliculaId) => {
     ],
  */
 export const obtenerPeliculasConPuntuacionExcelente = () => {
-    // Ejemplo de como accedo a datos dentro de la base de datos
-    // console.log(basededatos.peliculas);
-    return [];
+    
+    let arrayPuntuaciones = [];
+
+    basededatos.calificaciones.forEach((calificacion)=>{
+        if(calificacion.puntuacion >=9){
+            arrayPuntuaciones.push(calificacion.pelicula)
+        }
+    })
+
+    let peliculasExcelentes = []
+
+    basededatos.peliculas.forEach((pelicula)=>{
+        if(arrayPuntuaciones.includes(pelicula.id)){
+            peliculasExcelentes.push(pelicula)
+        }
+    })
+    
+    return peliculasExcelentes
 };
 
 /**
@@ -121,5 +183,55 @@ export const obtenerPeliculasConPuntuacionExcelente = () => {
  * @param {string} nombrePelicula
  */
 export const expandirInformacionPelicula = (nombrePelicula) => {
-    return {};
+    
+    let directores = [];
+    let generos = [];
+    let criticas = [];
+    
+    let peliculaFilter = basededatos.peliculas.filter((pelicula)=>{
+        if(pelicula.nombre === nombrePelicula){
+            return pelicula
+        }
+    });
+
+    basededatos.directores.forEach((director)=>{
+        if(peliculaFilter[0].directores.includes(director.id)){
+            directores.push(director);
+        }
+    });
+
+    basededatos.generos.forEach((genero)=>{
+        if(peliculaFilter[0].generos.includes(genero.id)){
+            generos.push(genero);
+        }
+    })
+
+    basededatos.calificaciones.forEach((calificacionCritico)=>{
+        let objetoCritico = {};
+        if(calificacionCritico.pelicula === peliculaFilter[0].id){
+            objetoCritico.puntuacion = calificacionCritico.puntuacion;
+           basededatos.criticos.forEach((critico)=>{
+               if(critico.id === calificacionCritico.critico){
+                   basededatos.paises.forEach((pais)=>{
+                       if(pais.id === critico.pais){
+                            objetoCritico.critico = {
+                                ...critico,
+                                pais: pais.nombre
+                            }
+                       }
+                   })
+               }
+           })
+           criticas.push(objetoCritico);
+        }  
+    })
+
+    peliculaFilter = {
+        ...peliculaFilter[0],
+        directores: directores,
+        generos: generos,
+        criticas: criticas
+    }
+
+    return peliculaFilter
 };
